@@ -5,6 +5,7 @@ import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDe
 import io.confluent.kafka.streams.serdes.avro.GenericAvroDeserializer
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+
 import collection.JavaConverters._
 import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.coders.AvroCoder
@@ -12,6 +13,7 @@ import org.apache.beam.sdk.io.kafka.{KafkaIO, KafkaRecord}
 import org.apache.beam.sdk.options.PipelineOptionsFactory
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 import org.apache.beam.sdk.transforms._
+import org.apache.beam.sdk.values.KV
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.joda.time.Instant
 import org.slf4j.LoggerFactory
@@ -20,9 +22,12 @@ import play.api.libs.json._
 
 
 object App {
+  type InputRecord = KafkaRecord[String, GenericRecord]
+  type BeamRecord = KV[String, GenericRecord]
+
   private final val LOG = LoggerFactory.getLogger(App.getClass)
 
-  def printRecord = new DoFn[KafkaRecord[String, GenericRecord], Unit] {
+  def printRecord = new DoFn[InputRecord, Unit] {
     @ProcessElement
     def processElement(c: ProcessContext): Unit = {
       println(c.element.getKV.getValue.get("email"))
@@ -54,15 +59,17 @@ object App {
     val registryUrl = "http://schema_registry:8081"
 
     val options = PipelineOptionsFactory.create
-    val pipeline = Pipeline.create(options)
+    val p = Pipeline.create(options)
 
-    val input = getKafkaInput(bootstrapServers, "app-users", registryUrl)
-      .withStartReadTime(Instant.parse("2019-01-01"))
-      .withMaxNumRecords(20)
+    val appUsers = p.apply(
+      "ReadAppUsers",
+      getKafkaInput(bootstrapServers, "app-users", registryUrl)
+        .withStartReadTime(Instant.parse("2019-01-01"))
+    )
 
-    pipeline.apply("Read", input)
+    appUsers
       .apply("Print", ParDo.of(printRecord))
 
-    pipeline.run.waitUntilFinish
+    p.run.waitUntilFinish
   }
 }
