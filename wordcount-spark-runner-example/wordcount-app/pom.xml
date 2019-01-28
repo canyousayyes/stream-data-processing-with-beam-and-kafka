@@ -50,6 +50,13 @@
       <version>2.9.0</version>
     </dependency>
 
+    <!-- AWS -->
+    <dependency>
+      <groupId>org.apache.beam</groupId>
+      <artifactId>beam-sdks-java-io-amazon-web-services</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+
     <!-- Logging -->
     <dependency>
       <groupId>ch.qos.logback</groupId>

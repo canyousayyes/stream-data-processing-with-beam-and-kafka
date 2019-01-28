@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 
 object App {
   private final val LOG = LoggerFactory.getLogger(App.getClass)
+  private final val DEFAULT_AWS_REGION = "us-west-2"
 
   trait AppOptions extends PipelineOptions {
     @Description("Input path")
@@ -22,6 +23,10 @@ object App {
     @Required
     def getOutputPath: String
     def setOutputPath(value: String): Unit
+
+    @Description("AWS region")
+    def getAwsRegion: String
+    def setAwsRegion(value: String): Unit
   }
 
   def main(args: Array[String]) {
@@ -29,6 +34,8 @@ object App {
       .fromArgs(args: _*)
       .withValidation()
       .as(classOf[AppOptions])
+    options.setAwsRegion(Option(options.getAwsRegion).getOrElse(DEFAULT_AWS_REGION))
+
     val pipeline = Pipeline.create(options)
     val input = TextIO.read.from(options.getInputPath)
     val output = TextIO.write.to(options.getOutputPath)
