@@ -26,14 +26,14 @@ object App {
 
   def main(args: Array[String]) {
     val options = PipelineOptionsFactory
-      .fromArgs(args.mkString(" "))
+      .fromArgs(args: _*)
       .withValidation()
       .as(classOf[AppOptions])
     val pipeline = Pipeline.create(options)
     val input = TextIO.read.from(options.getInputPath)
     val output = TextIO.write.to(options.getOutputPath)
 
-    LOG.info(s"Running wordcount example from ${input} to ${output} ...")
+    LOG.info(s"Running wordcount example from ${options.getInputPath} to ${options.getOutputPath} ...")
     pipeline.apply("ReadFiles", input)
       .apply("ExtractWords", FlatMapElements.into(TypeDescriptors.strings)
         .via((word: String) => word.split("[^\\p{L}]+").toIterable.asJava)
